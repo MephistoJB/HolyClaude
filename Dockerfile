@@ -63,7 +63,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ---------- bubblewrap setuid (Codex CLI sandbox on restricted kernels) ----------
-RUN chmod u+s /usr/bin/bwrap
+RUN test -x /usr/bin/bwrap && chown root:root /usr/bin/bwrap && chmod 4755 /usr/bin/bwrap && test "$(stat -c '%a %u %g' /usr/bin/bwrap)" = "4755 0 0"
 
 # ---------- Full-only system packages ----------
 RUN if [ "$VARIANT" = "full" ]; then \

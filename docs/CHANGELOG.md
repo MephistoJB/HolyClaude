@@ -4,6 +4,11 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.4] - 05/27/2026
+
+### Fixed
+- Repaired bubblewrap setuid permissions at container startup so Codex `apply_patch` keeps working on Synology and other restricted-user-namespace hosts after `docker compose pull && docker compose up -d`.
+
 ## [1.2.3] - 05/27/2026
 
 ### Changed
