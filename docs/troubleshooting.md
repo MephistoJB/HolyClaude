@@ -141,6 +141,25 @@ docker compose restart holyclaude
 
 ---
 
+### CloudCLI update fails with `@/shared`
+
+**Symptom:** CloudCLI fails after an in-container update and logs:
+```text
+Cannot find package '@/shared' imported from .../@cloudcli-ai/cloudcli/server/index.js
+```
+
+**Cause:** The upstream npm self-update path can replace HolyClaude's patched CloudCLI files with the moved CloudCLI package. That package ships source-path imports under `server/` that do not run correctly in this image.
+
+**Fix:** Recreate the container from the HolyClaude image and use Docker for updates:
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Do not run `cloudcli update` or `npm install -g @siteboon/claude-code-ui@latest` inside the container. HolyClaude disables that self-update path so the patched CloudCLI runtime stays intact.
+
+---
+
 ## SMB/CIFS Gotchas
 
 If your volumes are on a Samba/CIFS network share (common with Hyper-V VMs, NAS devices):

@@ -4,6 +4,12 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.7] - 06/13/2026
+
+### Fixed
+- Disabled CloudCLI's unsafe npm self-update path inside HolyClaude so issue #50 no longer replaces the patched runtime with the moved upstream package.
+- Documented the `@/shared` CloudCLI update failure and the Docker update path.
+
 ## [1.2.6] - 05/28/2026
 
 ### Added
