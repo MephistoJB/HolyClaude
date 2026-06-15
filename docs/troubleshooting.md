@@ -160,6 +160,22 @@ Do not run `cloudcli update` or `npm install -g @cloudcli-ai/cloudcli@latest` in
 
 ---
 
+### Codex chat returns to `new session`
+
+**Symptom:** A new Codex chat creates the session and sends the first prompt, then CloudCLI returns to the `new session` view a few seconds later. Reopening the created session manually still works.
+
+**Cause:** Older images could receive a successful Codex completion event without an explicit success exit code. That left the first-turn session finalization path different from Claude, Cursor, and Gemini.
+
+**Fix:** Update HolyClaude with Docker:
+```bash
+docker compose pull
+docker compose up -d
+```
+
+HolyClaude v1.3.0 patches CloudCLI so successful Codex completion events include `exitCode: 0`.
+
+---
+
 ## SMB/CIFS Gotchas
 
 If your volumes are on a Samba/CIFS network share (common with Hyper-V VMs, NAS devices):

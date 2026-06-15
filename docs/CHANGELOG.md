@@ -4,6 +4,12 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 06/15/2026
+
+### Fixed
+- Patched CloudCLI Codex completion events so successful Codex chat turns include `exitCode: 0`, matching the other providers and keeping new Codex sessions on the active session after the first prompt.
+- Added a fail-closed Docker build patch for the Codex completion payload so future CloudCLI changes are reviewed instead of silently dropping the fix.
+
 ## [1.2.9] - 06/14/2026
 
 ### Added
