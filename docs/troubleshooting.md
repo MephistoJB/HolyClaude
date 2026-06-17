@@ -16,6 +16,22 @@ Solutions to common issues when running HolyClaude.
 
 ---
 
+### CloudCLI says "Failed to browse filesystem"
+
+**Symptom:** The CloudCLI folder picker cannot open `~`, `/workspace`, or a broad NAS mount such as `/volume2/docker:/workspace`.
+
+**Cause:** HolyClaude `1.3.3` could remove CloudCLI's `expandWorkspacePath` helper while disabling CloudCLI's in-container self-update path. That left the patched runtime calling a helper that was no longer defined.
+
+**Fix:** Update to HolyClaude `1.3.4` or newer:
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Broad NAS mounts are supported, but remember that `/workspace` is the CloudCLI boundary. Anything readable under that mount is visible to authenticated CloudCLI users. Prefer a narrower project mount when you do not want the whole NAS folder tree exposed inside CloudCLI.
+
+---
+
 ### SQLite "database is locked" errors
 
 **Symptom:** Constant lock errors from CloudCLI account database or other SQLite databases.

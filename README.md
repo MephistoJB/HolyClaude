@@ -1027,6 +1027,22 @@ CloudCLI opens to `/home/claude` instead of `/workspace`.
 </details>
 
 <details>
+<summary><strong>CloudCLI says "Failed to browse filesystem"</strong></summary>
+
+CloudCLI cannot open `~`, `/workspace`, or a broad NAS mount such as `/volume2/docker:/workspace`.
+
+**Cause:** HolyClaude `1.3.3` could remove CloudCLI's `expandWorkspacePath` helper while disabling CloudCLI's in-container self-update path.
+
+**Fix:** Update to HolyClaude `1.3.4` or newer:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+Broad NAS mounts work, but `/workspace` is the CloudCLI boundary. Anything readable under that mount is visible to authenticated CloudCLI users. Use a narrower project mount when you do not want the whole NAS folder tree exposed inside CloudCLI.
+</details>
+
+<details>
 <summary><strong>SQLite "database is locked"</strong></summary>
 
 **Cause:** SQLite databases on SMB/CIFS network mounts. CIFS doesn't support the file-level locking SQLite requires.

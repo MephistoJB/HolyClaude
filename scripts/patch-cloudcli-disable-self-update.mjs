@@ -13,7 +13,9 @@ const CLI_OLD_GLOBAL_INSTALL_HINT = "console.log(`\\n${c.dim('  Or install globa
 const CLI_DOCKER_UPDATE_HINT = "console.log(`\\n${c.dim('  HolyClaude updates:')} ${HOLYCLAUDE_DOCKER_UPDATE_COMMAND}\\n`);";
 const INDEX_ROUTE_COMMENT = '// System update endpoint';
 const INDEX_ROUTE_ANCHOR = "app.post('/api/system/update', authenticateToken, async (req, res) => {";
-const INDEX_NEXT_ROUTE = "\napp.get('/api/browse-filesystem'";
+const INDEX_BROWSE_ROUTE = "app.get('/api/browse-filesystem'";
+const INDEX_CREATE_FOLDER_ROUTE = "app.post('/api/create-folder'";
+const INDEX_WORKSPACE_HELPER = 'const expandWorkspacePath';
 const INDEX_OLD_NPM_UPDATE = "npm install -g @cloudcli-ai/cloudcli@latest";
 
 const targets = [
@@ -52,20 +54,76 @@ function writeSource(path, source) {
   }
 }
 
-function findFunctionEnd(source, functionAnchor) {
-  const functionIndex = source.indexOf(functionAnchor);
-  if (functionIndex === -1) {
-    return -1;
+function countOccurrences(source, searchText) {
+  let count = 0;
+  let searchIndex = source.indexOf(searchText);
+
+  while (searchIndex !== -1) {
+    count += 1;
+    searchIndex = source.indexOf(searchText, searchIndex + searchText.length);
   }
 
-  const bodyStartIndex = source.indexOf('{', functionIndex);
+  return count;
+}
+
+function findBlockEnd(source, bodyStartIndex) {
   if (bodyStartIndex === -1) {
     return -1;
   }
 
   let braceDepth = 0;
+  let quote = null;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+
   for (let sourceIndex = bodyStartIndex; sourceIndex < source.length; sourceIndex += 1) {
     const character = source[sourceIndex];
+    const nextCharacter = source[sourceIndex + 1];
+
+    if (lineComment) {
+      if (character === '\n' || character === '\r') {
+        lineComment = false;
+      }
+      continue;
+    }
+
+    if (blockComment) {
+      if (character === '*' && nextCharacter === '/') {
+        blockComment = false;
+        sourceIndex += 1;
+      }
+      continue;
+    }
+
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === '\\') {
+        escaped = true;
+      } else if (character === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (character === '/' && nextCharacter === '/') {
+      lineComment = true;
+      sourceIndex += 1;
+      continue;
+    }
+
+    if (character === '/' && nextCharacter === '*') {
+      blockComment = true;
+      sourceIndex += 1;
+      continue;
+    }
+
+    if (character === '\'' || character === '"' || character === '`') {
+      quote = character;
+      continue;
+    }
+
     if (character === '{') {
       braceDepth += 1;
     } else if (character === '}') {
@@ -77,6 +135,45 @@ function findFunctionEnd(source, functionAnchor) {
   }
 
   return -1;
+}
+
+function findFunctionEnd(source, functionAnchor) {
+  const functionIndex = source.indexOf(functionAnchor);
+  if (functionIndex === -1) {
+    return -1;
+  }
+
+  return findBlockEnd(source, source.indexOf('{', functionIndex));
+}
+
+function findRouteSpan(source, routeAnchor) {
+  const routeIndex = source.indexOf(routeAnchor);
+  if (routeIndex === -1 || countOccurrences(source, routeAnchor) !== 1) {
+    return null;
+  }
+
+  const bodyEndIndex = findBlockEnd(source, source.indexOf('{', routeIndex));
+  if (bodyEndIndex === -1) {
+    return null;
+  }
+
+  const terminatorMatch = source.slice(bodyEndIndex).match(/^\s*\);/);
+  if (!terminatorMatch) {
+    return null;
+  }
+
+  const routeEndIndex = bodyEndIndex + terminatorMatch[0].length;
+  const routeCommentIndex = source.lastIndexOf(INDEX_ROUTE_COMMENT, routeIndex);
+  const commentMatchesRoute = routeCommentIndex !== -1
+    && source.slice(routeCommentIndex + INDEX_ROUTE_COMMENT.length, routeIndex).trim() === '';
+  const startIndex = commentMatchesRoute ? routeCommentIndex : routeIndex;
+
+  return {
+    startIndex,
+    routeIndex,
+    routeEndIndex,
+    originalRoute: source.slice(routeIndex, routeEndIndex)
+  };
 }
 
 function patchCli(path) {
@@ -145,17 +242,19 @@ function patchCli(path) {
 function patchIndex(path) {
   let source = readSource(path);
   const alreadyPatched = source.includes(INDEX_MARKER);
+  const hadWorkspaceHelper = source.includes(INDEX_WORKSPACE_HELPER);
+  const hadBrowseRoute = source.includes(INDEX_BROWSE_ROUTE);
+  const hadCreateFolderRoute = source.includes(INDEX_CREATE_FOLDER_ROUTE);
 
   if (!alreadyPatched) {
-    const routeCommentIndex = source.indexOf(INDEX_ROUTE_COMMENT);
-    const routeIndex = source.indexOf(INDEX_ROUTE_ANCHOR);
-    const nextRouteIndex = source.indexOf(INDEX_NEXT_ROUTE, routeIndex);
+    const routeSpan = findRouteSpan(source, INDEX_ROUTE_ANCHOR);
+    const helperIndex = source.indexOf(INDEX_WORKSPACE_HELPER);
+    const browseRouteIndex = source.indexOf(INDEX_BROWSE_ROUTE);
 
-    const requiredAnchorsPresent = routeCommentIndex !== -1
-      && routeIndex !== -1
-      && nextRouteIndex !== -1
-      && routeCommentIndex < routeIndex
-      && source.includes(INDEX_OLD_NPM_UPDATE);
+    const requiredAnchorsPresent = routeSpan
+      && routeSpan.originalRoute.includes(INDEX_OLD_NPM_UPDATE)
+      && (helperIndex === -1 || routeSpan.routeEndIndex <= helperIndex)
+      && (browseRouteIndex === -1 || routeSpan.routeEndIndex <= browseRouteIndex);
 
     if (!requiredAnchorsPresent) {
       console.error(ERROR_MESSAGE);
@@ -174,10 +273,18 @@ app.post('/api/system/update', authenticateToken, async (req, res) => {
 });
 `;
 
-    source = `${source.slice(0, routeCommentIndex)}${replacement}${source.slice(nextRouteIndex)}`;
+    source = `${source.slice(0, routeSpan.startIndex)}${replacement}${source.slice(routeSpan.routeEndIndex)}`;
   }
 
-  if (!source.includes(INDEX_MARKER) || source.includes(INDEX_OLD_NPM_UPDATE)) {
+  if (
+    !source.includes(INDEX_MARKER)
+    || source.includes(INDEX_OLD_NPM_UPDATE)
+    || (hadWorkspaceHelper && !source.includes(INDEX_WORKSPACE_HELPER))
+    || (hadBrowseRoute && !source.includes(INDEX_BROWSE_ROUTE))
+    || (hadCreateFolderRoute && !source.includes(INDEX_CREATE_FOLDER_ROUTE))
+    || (hadBrowseRoute && !source.includes('let targetPath = dirPath ? expandWorkspacePath(dirPath) : defaultRoot;'))
+    || (hadCreateFolderRoute && !source.includes('const expandedPath = expandWorkspacePath(folderPath);'))
+  ) {
     console.error(ERROR_MESSAGE);
     process.exit(1);
   }

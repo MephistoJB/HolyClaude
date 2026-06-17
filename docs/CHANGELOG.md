@@ -4,6 +4,12 @@ All notable changes to HolyClaude will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] - 06/17/2026
+
+### Fixed
+- Preserved CloudCLI's `expandWorkspacePath` helper while disabling in-container self-updates, restoring workspace browsing and `~/...` folder creation in the patched runtime.
+- Added regression coverage so the CloudCLI self-update patch cannot remove the filesystem browser helpers again.
+
 ## [1.3.3] - 06/15/2026
 
 ### Fixed
