@@ -702,11 +702,11 @@ graph TB
 
 ### 各组件如何协同工作
 
-1. **容器启动** — `entrypoint.sh` 以 root 运行。重新映射 UID/GID 以匹配宿主机用户，预先创建必要文件（防止 Docker 将其创建为目录的 bug），检查是否为首次启动。
+1. **容器启动** — `entrypoint.sh` 以 root 运行。重新映射 UID/GID 以匹配宿主机用户，在 bootstrap 接触它之前恢复已保存的 Claude Code 会话，并检查是否为首次启动。
 
 2. **仅首次启动** — `bootstrap.sh` 运行一次。复制默认配置、memory 模板，配置 git 身份。创建哨兵文件（`.holyclaude-bootstrapped`）确保不再重复运行。从此你的自定义配置是安全的。
 
-3. **s6-overlay 接管成为 PID 1** — 这不是 supervisord。这是 [s6-overlay](https://github.com/just-containers/s6-overlay)，专为 Docker 构建。监督 CloudCLI 和 Xvfb，崩溃后自动重启，转发信号，回收僵尸进程，优雅关闭。
+3. **s6-overlay 接管成为 PID 1** — 这不是 supervisord。这是 [s6-overlay](https://github.com/just-containers/s6-overlay)，专为 Docker 构建。监督 CloudCLI、Xvfb 和 Claude 会话同步，崩溃后自动重启，转发信号，回收僵尸进程，优雅关闭。
 
 4. **CloudCLI 提供 Web UI** — 端口 3001。基于浏览器的 Claude Code 界面，支持项目管理、多会话和插件（项目统计 + Web 终端均已预装）。
 
@@ -768,6 +768,8 @@ holyclaude/
 | Claude Code 会话（OAuth、引导） | `/home/claude/.claude.json` | `./data/claude/.claude.json.persist` | **是** |
 | 你的代码和项目 | `/workspace` | `./workspace` | **是** |
 | CloudCLI 账户 | `/home/claude/.cloudcli` | *(默认仅容器内 — 见下文)* | 否（可选持久化） |
+
+HolyClaude 会在启动创建新的默认文件之前恢复已保存的 Claude Code 会话。这样 rebuild 和 recreate 不会用 onboarding 状态替换真实的 OAuth/API 会话。
 
 ### 执行 `docker compose down && docker compose up` 后保留的内容：
 - 你的 Anthropic 认证和 API 密钥
@@ -1019,7 +1021,7 @@ id -g  # → this is your PGID
 
 **原因：** 如果绑定挂载的目标文件在容器启动前不存在，Docker 会"贴心地"将其创建为目录。谢谢你，Docker。
 
-**解决方案：** 已处理，`entrypoint.sh` 预先将其创建为文件。
+**解决方案：** 已处理，`entrypoint.sh` 会先恢复已保存的会话文件；如果没有保存的会话，才创建安全的默认文件。
 </details>
 
 查看 [docs/troubleshooting.md](docs/troubleshooting.md) 获取完整指南，包括所有 SMB/CIFS 注意事项以及我们遇到并修复的 bug 完整历史。

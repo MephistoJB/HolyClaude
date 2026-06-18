@@ -1,5 +1,6 @@
 #!/command/with-contenv sh
-cd /workspace
+# shellcheck shell=sh
+cd /workspace || exit 1
 export HOME=/home/claude
 export WORKSPACES_ROOT=/workspace
 export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--no-deprecation"

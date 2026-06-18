@@ -1,0 +1,21 @@
+#!/command/with-contenv sh
+# shellcheck shell=sh
+interval="${HOLYCLAUDE_CLAUDE_JSON_SYNC_INTERVAL:-60}"
+warned=0
+
+case "$interval" in
+  ''|*[!0-9]*|0)
+    echo "[persist-claude-json] WARNING: invalid HOLYCLAUDE_CLAUDE_JSON_SYNC_INTERVAL; using 60"
+    interval=60
+    ;;
+esac
+
+while true; do
+  if node /usr/local/bin/persist-claude-json.mjs --save-live --quiet; then
+    warned=0
+  elif [ "$warned" = "0" ]; then
+    echo "[persist-claude-json] WARNING: could not persist Claude session state; check host mount permissions"
+    warned=1
+  fi
+  sleep "$interval"
+done
