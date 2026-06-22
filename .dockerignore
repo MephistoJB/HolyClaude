@@ -11,7 +11,7 @@ docs/
 .github/
 
 # Assets (logo, screenshots)
-assets/
+assets/*
 !assets/holyclaude-codex-lmstudio-settings.js
 
 # Runtime data (should never be in build context)
