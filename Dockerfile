@@ -184,6 +184,7 @@ COPY vendor/artifacts/cloudcli-ai-cloudcli-1.34.0.tgz /tmp/vendor/cloudcli-ai-cl
 RUN npm i -g /tmp/vendor/cloudcli-ai-cloudcli-1.34.0.tgz && rm -f /tmp/vendor/cloudcli-ai-cloudcli-1.34.0.tgz
 COPY scripts/patch-cloudcli-apprise-notifications.mjs /tmp/patch-cloudcli-apprise-notifications.mjs
 COPY scripts/patch-cloudcli-codex-complete-exit-code.mjs /tmp/patch-cloudcli-codex-complete-exit-code.mjs
+COPY scripts/patch-cloudcli-codex-lmstudio.mjs /tmp/patch-cloudcli-codex-lmstudio.mjs
 COPY scripts/patch-cloudcli-codex-permissions.mjs /tmp/patch-cloudcli-codex-permissions.mjs
 COPY scripts/patch-cloudcli-disable-self-update.mjs /tmp/patch-cloudcli-disable-self-update.mjs
 COPY --chown=claude:claude scripts/patch-cloudcli-web-terminal-rendering.mjs /tmp/patch-cloudcli-web-terminal-rendering.mjs
@@ -208,8 +209,13 @@ RUN node /tmp/patch-cloudcli-apprise-notifications.mjs && rm -f /tmp/patch-cloud
 # patch: configure Codex CloudCLI chat permission mode (issue #18)
 RUN node /tmp/patch-cloudcli-codex-permissions.mjs && rm -f /tmp/patch-cloudcli-codex-permissions.mjs
 
+# patch: add Codex LM Studio settings + model discovery UI (issue #20)
+RUN node /tmp/patch-cloudcli-codex-lmstudio.mjs && rm -f /tmp/patch-cloudcli-codex-lmstudio.mjs
+
 # patch: include explicit Codex success exitCode in CloudCLI completion events (issue #19)
 RUN node /tmp/patch-cloudcli-codex-complete-exit-code.mjs && rm -f /tmp/patch-cloudcli-codex-complete-exit-code.mjs
+
+COPY assets/holyclaude-codex-lmstudio-settings.js /usr/local/lib/node_modules/@cloudcli-ai/cloudcli/dist/assets/holyclaude-codex-lmstudio-settings.js
 
 # ---------- CloudCLI plugins (baked into image) ----------
 USER claude
@@ -241,13 +247,15 @@ COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/bootstrap.sh /usr/local/bin/bootstrap.sh
 COPY scripts/persist-claude-json.mjs /usr/local/bin/persist-claude-json.mjs
 COPY scripts/notify.py /usr/local/bin/notify.py
+COPY scripts/sync-codex-lmstudio-config.sh /usr/local/bin/sync-codex-lmstudio-config.sh
 COPY config/settings.json /usr/local/share/holyclaude/settings.json
 COPY config/claude-memory-full.md /usr/local/share/holyclaude/claude-memory-full.md
 COPY config/claude-memory-slim.md /usr/local/share/holyclaude/claude-memory-slim.md
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     /usr/local/bin/bootstrap.sh \
     /usr/local/bin/persist-claude-json.mjs \
-    /usr/local/bin/notify.py
+    /usr/local/bin/notify.py \
+    /usr/local/bin/sync-codex-lmstudio-config.sh
 
 # ---------- s6-overlay service definitions ----------
 COPY s6-overlay/s6-rc.d/cloudcli/type /etc/s6-overlay/s6-rc.d/cloudcli/type

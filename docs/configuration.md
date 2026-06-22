@@ -100,12 +100,16 @@ Claude Code can authenticate via web UI (OAuth) or `ANTHROPIC_API_KEY`. Other AI
 | `GEMINI_API_KEY` | (unset) | Google Gemini API key |
 | `OPENAI_API_KEY` | (unset) | OpenAI API key |
 | `CURSOR_API_KEY` | (unset) | Cursor API key |
+| `HOLYCLAUDE_CODEX_BASE_URL` | (unset) | Optional LM Studio/OpenAI-compatible base URL for Codex. Legacy alias: `CODEX_OSS_BASE_URL`. |
+| `HOLYCLAUDE_CODEX_MODEL` | (unset) | Optional Codex model override for LM Studio. Legacy alias: `CODEX_MODEL`. |
 
 OpenCode is configured from the full image with the `opencode` TUI. Use that path for [OpenRouter](https://openrouter.ai/docs/cookbook/coding-agents/opencode-integration) and other [OpenCode-supported providers](https://opencode.ai/docs/providers/). Free model availability depends on OpenRouter and provider account limits; HolyClaude does not proxy requests or guarantee zero-cost usage.
 
 ### Codex Permission Modes
 
 HolyClaude provides configurable near-parity permission modes for Codex. These settings are intentionally split because CloudCLI Codex chat and the raw `codex` CLI read configuration through different paths.
+
+For LM Studio, HolyClaude can also seed and update Codex's own config with `model_provider="lmstudio"`, `openai_base_url`, and `model`. You can do that either through env vars (`HOLYCLAUDE_CODEX_BASE_URL`, `HOLYCLAUDE_CODEX_MODEL`) or through the CloudCLI GUI helper labeled `Codex LM Studio`.
 
 | Variable | Default | Valid values | Applies to | Behavior |
 |----------|---------|--------------|------------|----------|

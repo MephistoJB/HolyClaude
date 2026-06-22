@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Added
 - Added the HolyCode Cloud early-access callout near the top of the README, linking readers to https://holycode.coderluii.dev/cloud.
+- Added a Codex LM Studio configuration helper to the CloudCLI UI, including direct LM Studio model discovery and persistent writes to `~/.codex/config.toml`.
+- Added Codex LM Studio env syncing on container startup via `HOLYCLAUDE_CODEX_BASE_URL` / `HOLYCLAUDE_CODEX_MODEL`, with support for legacy aliases `CODEX_OSS_BASE_URL` / `CODEX_MODEL`.
+- Updated Codex model lookup to load LM Studio models from the configured `/v1/models` endpoint instead of only using Codex's local cache.
 
 ## [1.3.6] - 06/18/2026
 

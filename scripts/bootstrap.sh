@@ -70,6 +70,30 @@ sandbox_mode = "$CODEX_CLI_SANDBOX_MODE"
 [features]
 codex_hooks = true
 TOML
+
+    if [ -n "${HOLYCLAUDE_CODEX_BASE_URL:-${CODEX_OSS_BASE_URL:-}}" ]; then
+        CODEX_BASE_URL_RAW="${HOLYCLAUDE_CODEX_BASE_URL:-${CODEX_OSS_BASE_URL}}"
+        CODEX_BASE_URL_NORMALIZED="${CODEX_BASE_URL_RAW%/}"
+        case "$CODEX_BASE_URL_NORMALIZED" in
+            */v1) ;;
+            *) CODEX_BASE_URL_NORMALIZED="${CODEX_BASE_URL_NORMALIZED}/v1" ;;
+        esac
+        cat >> "$CLAUDE_HOME/.codex/config.toml" <<TOML
+model_provider = "lmstudio"
+oss_provider = "lmstudio"
+openai_base_url = "$CODEX_BASE_URL_NORMALIZED"
+TOML
+    fi
+
+    if [ -n "${HOLYCLAUDE_CODEX_MODEL:-${CODEX_MODEL:-}}" ]; then
+        CODEX_SELECTED_MODEL="${HOLYCLAUDE_CODEX_MODEL:-${CODEX_MODEL}}"
+        cat >> "$CLAUDE_HOME/.codex/config.toml" <<TOML
+model_provider = "lmstudio"
+oss_provider = "lmstudio"
+model = "$CODEX_SELECTED_MODEL"
+TOML
+    fi
+
     echo "[bootstrap] Created Codex CLI config ($CODEX_CLI_CONFIG_LABEL, hooks enabled)"
 elif ! grep -q '^\[features\]' "$CLAUDE_HOME/.codex/config.toml"; then
     printf '\n[features]\ncodex_hooks = true\n' >> "$CLAUDE_HOME/.codex/config.toml"

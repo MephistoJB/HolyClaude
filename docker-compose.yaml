@@ -24,3 +24,7 @@ services:
       - ./workspace:/workspace
     environment:
       - TZ=UTC          # Change to your timezone
+      # Optional: run Codex against LM Studio / local OpenAI-compatible backends
+      # Unraid example:
+      # - HOLYCLAUDE_CODEX_BASE_URL=http://macserver:1234/v1
+      # - HOLYCLAUDE_CODEX_MODEL=qwen3.6-27b-mlx

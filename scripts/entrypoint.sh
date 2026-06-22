@@ -117,6 +117,11 @@ if [ ! -f "$SENTINEL" ]; then
     fi
 fi
 
+# ---------- Sync Codex LM Studio env overrides (every boot) ----------
+if ! /usr/local/bin/sync-codex-lmstudio-config.sh; then
+    echo "[entrypoint] WARNING: sync-codex-lmstudio-config.sh failed — continuing anyway"
+fi
+
 # ---------- Optional Desloppify global skill setup ----------
 desloppify_add_target() {
     case " $DESLOPPIFY_TARGETS " in

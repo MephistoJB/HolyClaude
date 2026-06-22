@@ -423,6 +423,11 @@ services:
       # - GEMINI_API_KEY=your_key
       # - OPENAI_API_KEY=your_key
       # - CURSOR_API_KEY=your_key
+      # - HOLYCLAUDE_CODEX_BASE_URL=http://host.docker.internal:1234/v1
+      # - HOLYCLAUDE_CODEX_MODEL=qwen3.6-27b-mlx
+      # Legacy aliases also work:
+      # - CODEX_OSS_BASE_URL=http://host.docker.internal:1234/v1
+      # - CODEX_MODEL=qwen3.6-27b-mlx
       #
       # CODEX PERMISSION MODES (optional)
       # CloudCLI Codex chat reads HOLYCLAUDE_CODEX_CHAT_PERMISSION_MODE at runtime.
@@ -498,6 +503,8 @@ The complete reference. Every variable, what it defaults to, what it does.
 | `GEMINI_API_KEY` | *(unset)* | Google Gemini API key |
 | `OPENAI_API_KEY` | *(unset)* | OpenAI API key (for Codex CLI, or use `codex login --device-auth` for ChatGPT subscription) |
 | `CURSOR_API_KEY` | *(unset)* | Cursor API key |
+| `HOLYCLAUDE_CODEX_BASE_URL` | *(unset)* | Optional LM Studio/OpenAI-compatible base URL for Codex. Also accepts legacy `CODEX_OSS_BASE_URL`. |
+| `HOLYCLAUDE_CODEX_MODEL` | *(unset)* | Optional Codex model override for LM Studio. Also accepts legacy `CODEX_MODEL`. |
 | `HOLYCLAUDE_CODEX_CHAT_PERMISSION_MODE` | `acceptEdits` | CloudCLI Codex chat runtime mode. Valid: `default`, `acceptEdits`, `bypassPermissions` |
 | `HOLYCLAUDE_CODEX_CLI_PERMISSION_MODE` | `default` | Raw `codex` CLI first-boot mode for new `~/.codex/config.toml` only. Valid: `default`, `acceptEdits`, `bypassPermissions` |
 | `HOLYCLAUDE_DESLOPPIFY_SETUP` | `off` | Optional Desloppify global skill setup. Valid: `off`, `all`, `claude`, `codex`, `gemini`, `opencode`, or comma-separated subsets |
@@ -892,6 +899,19 @@ This is how I personally run it. Edit `./data/claude/settings.json` on your host
 ### Codex Permission Modes
 
 HolyClaude also ships configurable near-parity permission modes for Codex, with separate controls for CloudCLI Codex chat and the raw `codex` CLI.
+
+If you want to run Codex against LM Studio, HolyClaude now supports both environment variables and an in-app GUI helper. Set `HOLYCLAUDE_CODEX_BASE_URL` plus `HOLYCLAUDE_CODEX_MODEL` before container start, or use the floating `Codex LM Studio` button in CloudCLI to store `model_provider="lmstudio"`, `openai_base_url`, and `model` in `~/.codex/config.toml`.
+
+For Unraid, the container-side env block is typically:
+
+```text
+HOLYCLAUDE_CODEX_BASE_URL=http://macserver:1234/v1
+HOLYCLAUDE_CODEX_MODEL=qwen3.6-27b-mlx
+HOLYCLAUDE_CODEX_CHAT_PERMISSION_MODE=acceptEdits
+HOLYCLAUDE_CODEX_CLI_PERMISSION_MODE=acceptEdits
+```
+
+If `macserver` is not reachable from the Docker bridge on Unraid, replace it with a resolvable hostname or fixed IP that the container can actually reach.
 
 | Setting | Applies to | Default | When it is read |
 |---------|------------|---------|-----------------|

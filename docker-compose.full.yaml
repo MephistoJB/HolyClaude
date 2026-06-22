@@ -66,6 +66,14 @@ services:
       # - GEMINI_API_KEY=
       # - OPENAI_API_KEY=
       # - CURSOR_API_KEY=
+      # --- Codex LM Studio / local OpenAI-compatible backend (optional) ---
+      # These values are synced into ~/.codex/config.toml and can also be changed in the GUI.
+      # Unraid example:
+      # - HOLYCLAUDE_CODEX_BASE_URL=http://macserver:1234/v1
+      # - HOLYCLAUDE_CODEX_MODEL=qwen3.6-27b-mlx
+      # Legacy aliases still work if you already used them:
+      # - CODEX_OSS_BASE_URL=http://macserver:1234/v1
+      # - CODEX_MODEL=qwen3.6-27b-mlx
 
       # --- Codex permission modes (optional) ---
       # CloudCLI Codex chat runtime mode. Valid: default, acceptEdits, bypassPermissions.
