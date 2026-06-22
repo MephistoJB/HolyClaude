@@ -12,6 +12,7 @@ docs/
 
 # Assets (logo, screenshots)
 assets/
+!assets/holyclaude-codex-lmstudio-settings.js
 
 # Runtime data (should never be in build context)
 data/
