@@ -913,6 +913,8 @@ HOLYCLAUDE_CODEX_CLI_PERMISSION_MODE=acceptEdits
 
 If `macserver` is not reachable from the Docker bridge on Unraid, replace it with a resolvable hostname or fixed IP that the container can actually reach.
 
+The ready-to-import Unraid template for this fork lives in [unraid/mephistojb-holyclaude.xml](/Users/johnsmacminiserver/Documents/Programmierung/HolyClaude/unraid/mephistojb-holyclaude.xml), with usage notes in [unraid/README.md](/Users/johnsmacminiserver/Documents/Programmierung/HolyClaude/unraid/README.md).
+
 | Setting | Applies to | Default | When it is read |
 |---------|------------|---------|-----------------|
 | `HOLYCLAUDE_CODEX_CHAT_PERMISSION_MODE` | CloudCLI Codex chat in the browser | `acceptEdits` | Runtime container config, read by the CloudCLI Codex provider |
