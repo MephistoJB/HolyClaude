@@ -225,7 +225,7 @@ HolyClaude runs the **official Claude Code CLI** from Anthropic. Your existing a
 
 ### Worker API
 
-HolyClaude can also act as a lightweight worker for an external supervisor such as Codex. The worker API is intentionally narrow: HolyClaude executes prompts, resumes sessions, exposes session history, returns provider model catalogs, runs validation commands, and cancels active sessions. It does not perform review, acceptance, delegation planning, or correction orchestration.
+HolyClaude can also act as a lightweight worker for an external supervisor such as Codex. The role split is intentional: Codex supervises, plans, reviews, validates, and accepts work; HolyClaude only executes worker tasks and exposes the minimum API surface needed for that. The worker API is intentionally narrow: HolyClaude executes prompts, resumes sessions, exposes session history, returns provider model catalogs, runs validation commands, and cancels active sessions. It does not perform review, acceptance, delegation planning, or correction orchestration.
 
 Authentication:
 - Browser session JWT via `Authorization: Bearer ...`

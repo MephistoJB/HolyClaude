@@ -10,6 +10,12 @@ CLAUDE_USER="claude"
 CLAUDE_HOME="/home/claude"
 WORKSPACE_DIR="/workspace"
 
+ensure_owned_tree() {
+    local target="$1"
+    mkdir -p "$target"
+    chown -R "$PUID:$PGID" "$target" 2>/dev/null || true
+}
+
 # ---------- UID/GID remapping ----------
 PUID="${PUID:-1000}"
 PGID="${PGID:-1000}"
@@ -74,8 +80,7 @@ else
 fi
 
 # ---------- Codex CLI config symlink (every boot) ----------
-mkdir -p "$CLAUDE_HOME/.claude/.codex"
-chown "$PUID:$PGID" "$CLAUDE_HOME/.claude/.codex"
+ensure_owned_tree "$CLAUDE_HOME/.claude/.codex"
 [ -L "$CLAUDE_HOME/.codex" ] && [ ! -e "$CLAUDE_HOME/.codex" ] && rm -f "$CLAUDE_HOME/.codex"
 if [ ! -e "$CLAUDE_HOME/.codex" ]; then
     ln -s "$CLAUDE_HOME/.claude/.codex" "$CLAUDE_HOME/.codex"
@@ -83,8 +88,7 @@ if [ ! -e "$CLAUDE_HOME/.codex" ]; then
 fi
 
 # ---------- Gemini CLI config symlink (every boot) ----------
-mkdir -p "$CLAUDE_HOME/.claude/.gemini"
-chown "$PUID:$PGID" "$CLAUDE_HOME/.claude/.gemini"
+ensure_owned_tree "$CLAUDE_HOME/.claude/.gemini"
 [ -L "$CLAUDE_HOME/.gemini" ] && [ ! -e "$CLAUDE_HOME/.gemini" ] && rm -f "$CLAUDE_HOME/.gemini"
 if [ ! -e "$CLAUDE_HOME/.gemini" ]; then
     ln -s "$CLAUDE_HOME/.claude/.gemini" "$CLAUDE_HOME/.gemini"
@@ -92,8 +96,7 @@ if [ ! -e "$CLAUDE_HOME/.gemini" ]; then
 fi
 
 # ---------- Cursor CLI config symlink (every boot) ----------
-mkdir -p "$CLAUDE_HOME/.claude/.cursor"
-chown "$PUID:$PGID" "$CLAUDE_HOME/.claude/.cursor"
+ensure_owned_tree "$CLAUDE_HOME/.claude/.cursor"
 [ -L "$CLAUDE_HOME/.cursor" ] && [ ! -e "$CLAUDE_HOME/.cursor" ] && rm -f "$CLAUDE_HOME/.cursor"
 if [ ! -e "$CLAUDE_HOME/.cursor" ]; then
     ln -s "$CLAUDE_HOME/.claude/.cursor" "$CLAUDE_HOME/.cursor"
@@ -101,8 +104,7 @@ if [ ! -e "$CLAUDE_HOME/.cursor" ]; then
 fi
 
 # ---------- CloudCLI account state symlink (every boot) ----------
-mkdir -p "$CLAUDE_HOME/.claude/.cloudcli"
-chown "$PUID:$PGID" "$CLAUDE_HOME/.claude/.cloudcli"
+ensure_owned_tree "$CLAUDE_HOME/.claude/.cloudcli"
 
 if [ -d "$CLAUDE_HOME/.cloudcli" ] && [ ! -L "$CLAUDE_HOME/.cloudcli" ]; then
     if [ -z "$(ls -A "$CLAUDE_HOME/.claude/.cloudcli" 2>/dev/null)" ] && [ -n "$(ls -A "$CLAUDE_HOME/.cloudcli" 2>/dev/null)" ]; then

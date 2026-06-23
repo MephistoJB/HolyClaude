@@ -107,7 +107,7 @@ OpenCode is configured from the full image with the `opencode` TUI. Use that pat
 
 ### Worker API
 
-HolyClaude exposes a worker-only API for external supervisors. The API is designed for execution, session access, model discovery, validation commands, and cancellation. It is not a review or orchestration layer.
+HolyClaude exposes a worker-only API for external supervisors. The intended split is: Codex or another external system supervises, while HolyClaude executes. The API is designed for execution, session access, model discovery, validation commands, and cancellation. It is not a review or orchestration layer.
 
 Authentication options:
 - Browser session JWT via `Authorization: Bearer ...`

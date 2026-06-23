@@ -4,6 +4,7 @@ const DEFAULT_CLOUDCLI_ROOT = '/usr/local/lib/node_modules/@cloudcli-ai/cloudcli
 const cliTarget = process.argv[2];
 const ERROR_MESSAGE = '[patch] ERROR: CloudCLI worker-api anchors not found';
 const ROUTE_RELATIVE_PATH = 'routes/worker.js';
+const API_KEYS_REPOSITORY_RELATIVE_PATH = 'modules/database/repositories/api-keys.js';
 
 const workerRouteSource = `import express from 'express';
 import { spawn } from 'child_process';
@@ -564,9 +565,49 @@ function patchIndexFile(indexPath) {
   writeFileSync(indexPath, source);
 }
 
+function patchApiKeysRepository(filePath) {
+  let source = readFileSync(filePath, 'utf8');
+
+  if (!source.includes('function ensureApiKeysSchema()')) {
+    source = source.replace(
+      "function generateApiKey() {\n    return 'ck_' + crypto.randomBytes(32).toString('hex');\n}\n",
+      "function generateApiKey() {\n    return 'ck_' + crypto.randomBytes(32).toString('hex');\n}\nfunction ensureApiKeysSchema() {\n    const db = getConnection();\n    db.exec(`CREATE TABLE IF NOT EXISTS api_keys (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        user_id INTEGER NOT NULL,\n        key_name TEXT NOT NULL,\n        api_key TEXT UNIQUE NOT NULL,\n        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n        last_used DATETIME,\n        is_active BOOLEAN DEFAULT 1,\n        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE\n    );\n    CREATE INDEX IF NOT EXISTS idx_api_keys_key ON api_keys(api_key);\n    CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id);\n    CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys(is_active);`);\n    return db;\n}\n"
+    );
+  }
+
+  source = source.replace(
+    "createApiKey(userId, keyName) {\n        const db = getConnection();\n",
+    "createApiKey(userId, keyName) {\n        const db = ensureApiKeysSchema();\n"
+  );
+  source = source.replace(
+    "getApiKeys(userId) {\n        const db = getConnection();\n",
+    "getApiKeys(userId) {\n        const db = ensureApiKeysSchema();\n"
+  );
+  source = source.replace(
+    "validateApiKey(apiKey) {\n        const db = getConnection();\n",
+    "validateApiKey(apiKey) {\n        const db = ensureApiKeysSchema();\n"
+  );
+  source = source.replace(
+    "deleteApiKey(userId, apiKeyId) {\n        const db = getConnection();\n",
+    "deleteApiKey(userId, apiKeyId) {\n        const db = ensureApiKeysSchema();\n"
+  );
+  source = source.replace(
+    "toggleApiKey(userId, apiKeyId, isActive) {\n        const db = getConnection();\n",
+    "toggleApiKey(userId, apiKeyId, isActive) {\n        const db = ensureApiKeysSchema();\n"
+  );
+
+  if (!source.includes('function ensureApiKeysSchema()') || !source.includes('createApiKey(userId, keyName) {\n        const db = ensureApiKeysSchema();')) {
+    throw new Error(ERROR_MESSAGE);
+  }
+
+  writeFileSync(filePath, source);
+}
+
 for (const { label, root } of resolveRoots()) {
   const runtimeIndex = `${root}/dist-server/server/index.js`;
   const sourceIndex = `${root}/server/index.js`;
+  const runtimeApiKeysRepository = `${root}/dist-server/server/${API_KEYS_REPOSITORY_RELATIVE_PATH}`;
+  const sourceApiKeysRepository = `${root}/server/${API_KEYS_REPOSITORY_RELATIVE_PATH}`;
 
   if (!existsSync(runtimeIndex) || !existsSync(sourceIndex)) {
     throw new Error(ERROR_MESSAGE);
@@ -575,5 +616,14 @@ for (const { label, root } of resolveRoots()) {
   ensureRouteFiles(root);
   patchIndexFile(sourceIndex);
   patchIndexFile(runtimeIndex);
+
+  if (existsSync(sourceApiKeysRepository)) {
+    patchApiKeysRepository(sourceApiKeysRepository);
+  }
+
+  if (existsSync(runtimeApiKeysRepository)) {
+    patchApiKeysRepository(runtimeApiKeysRepository);
+  }
+
   console.log(`[patch] CloudCLI worker API applied (${label})`);
 }
