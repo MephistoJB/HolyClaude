@@ -4,7 +4,7 @@ This folder contains a ready-to-import Unraid template for the GHCR image built 
 
 ## Template
 
-- XML: [mephistojb-holyclaude.xml](/Users/johnsmacminiserver/Documents/Programmierung/HolyClaude/unraid/mephistojb-holyclaude.xml)
+- XML: [my-holyclaude.xml](/Users/johnsmacminiserver/Documents/Programmierung/HolyClaude/unraid/my-holyclaude.xml)
 - Image: `ghcr.io/mephistojb/holyclaude:edge`
 
 ## Import on Unraid
@@ -12,7 +12,7 @@ This folder contains a ready-to-import Unraid template for the GHCR image built 
 Copy the XML into:
 
 ```text
-/boot/config/plugins/dockerMan/templates-user/mephistojb-holyclaude.xml
+/boot/config/plugins/dockerMan/templates-user/my-holyclaude.xml
 ```
 
 Then refresh the Unraid Docker template page and add the container from the template.

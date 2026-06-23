@@ -66,9 +66,6 @@ if [ ! -f "$CLAUDE_HOME/.codex/config.toml" ]; then
     cat > "$CLAUDE_HOME/.codex/config.toml" <<TOML
 approval_policy = "$CODEX_CLI_APPROVAL_POLICY"
 sandbox_mode = "$CODEX_CLI_SANDBOX_MODE"
-
-[features]
-codex_hooks = true
 TOML
 
     if [ -n "${HOLYCLAUDE_CODEX_BASE_URL:-${CODEX_OSS_BASE_URL:-}}" ]; then
@@ -88,11 +85,15 @@ TOML
     if [ -n "${HOLYCLAUDE_CODEX_MODEL:-${CODEX_MODEL:-}}" ]; then
         CODEX_SELECTED_MODEL="${HOLYCLAUDE_CODEX_MODEL:-${CODEX_MODEL}}"
         cat >> "$CLAUDE_HOME/.codex/config.toml" <<TOML
-model_provider = "lmstudio"
-oss_provider = "lmstudio"
 model = "$CODEX_SELECTED_MODEL"
 TOML
     fi
+
+    cat >> "$CLAUDE_HOME/.codex/config.toml" <<'TOML'
+
+[features]
+codex_hooks = true
+TOML
 
     echo "[bootstrap] Created Codex CLI config ($CODEX_CLI_CONFIG_LABEL, hooks enabled)"
 elif ! grep -q '^\[features\]' "$CLAUDE_HOME/.codex/config.toml"; then
