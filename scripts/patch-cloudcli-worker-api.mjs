@@ -8,7 +8,7 @@ const ROUTE_RELATIVE_PATH = 'routes/worker.js';
 const workerRouteSource = `import express from 'express';
 import { spawn } from 'child_process';
 
-import { apiKeysDb, projectsDb, sessionsDb } from '../modules/database/index.js';
+import { apiKeysDb, getConnection, projectsDb, sessionsDb } from '../modules/database/index.js';
 import { sessionsService } from '../modules/providers/services/sessions.service.js';
 import { providerModelsService } from '../modules/providers/services/provider-models.service.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -20,6 +20,20 @@ import { abortOpenCodeSession, isOpenCodeSessionActive } from '../opencode-cli.j
 
 const router = express.Router();
 const PROVIDERS = new Set(['claude', 'cursor', 'codex', 'gemini', 'opencode']);
+const db = getConnection();
+
+db.exec(\`
+  CREATE TABLE IF NOT EXISTS api_keys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    key_name TEXT NOT NULL,
+    api_key TEXT NOT NULL UNIQUE,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_used TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  );
+\`);
 
 function readString(value, fallback = '') {
   return typeof value === 'string' ? value.trim() : fallback;
