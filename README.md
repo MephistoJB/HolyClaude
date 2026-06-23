@@ -223,6 +223,37 @@ HolyClaude runs the **official Claude Code CLI** from Anthropic. Your existing a
 
 > **HolyClaude is free and open source.** You only pay your AI providers for usage, same as you already do. We don't proxy, intercept, or touch your credentials. They live in your local bind mount.
 
+### Worker API
+
+HolyClaude can also act as a lightweight worker for an external supervisor such as Codex. The worker API is intentionally narrow: HolyClaude executes prompts, resumes sessions, exposes session history, returns provider model catalogs, runs validation commands, and cancels active sessions. It does not perform review, acceptance, delegation planning, or correction orchestration.
+
+Authentication:
+- Browser session JWT via `Authorization: Bearer ...`
+- User API key via `x-api-key: ck_...`
+
+Worker endpoints:
+- `GET /api/worker/health`
+- `GET /api/worker/models/:provider`
+- `POST /api/worker/run`
+- `POST /api/worker/sessions/:sessionId/resume`
+- `GET /api/worker/sessions/:sessionId/messages`
+- `GET /api/worker/sessions/:sessionId/status`
+- `POST /api/worker/sessions/:sessionId/cancel`
+- `POST /api/worker/validate`
+
+Minimal example:
+
+```bash
+curl -X POST http://localhost:3001/api/worker/run \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ck_your_key_here" \
+  -d '{
+    "provider": "codex",
+    "projectPath": "/workspace/my-project",
+    "prompt": "Fix the failing tests and report changed files."
+  }'
+```
+
 <p align="right">
   <a href="#top">↑ back to top</a>
 </p>
@@ -1168,7 +1199,7 @@ These are not HolyClaude bugs — they're upstream issues or intentional trade-o
 |-------|-----|------------|
 | "Continue in Shell" button broken | CloudCLI upstream bug (race condition in terminal init) | Use the **Web Terminal** plugin instead (pre-installed) |
 | Cursor CLI "Command timeout" | No API key configured — cosmetic only, doesn't affect anything | Set `CURSOR_API_KEY` or ignore |
-| CloudCLI account lost on rebuild | SQLite can't persist on network mounts — intentional trade-off | Re-create account (~10 seconds) |
+| CloudCLI account fails on network-mounted storage | SQLite file locking breaks on NAS/SMB/NFS mounts | Keep `.cloudcli` on local Docker storage or local bind mount |
 | Web push notifications "not supported" | Browser limitation in CloudCLI, standard behavior | Use Apprise notifications instead (see [Notifications](#bell-notifications)) |
 
 <p align="right">

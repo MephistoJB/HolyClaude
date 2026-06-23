@@ -105,6 +105,35 @@ Claude Code can authenticate via web UI (OAuth) or `ANTHROPIC_API_KEY`. Other AI
 
 OpenCode is configured from the full image with the `opencode` TUI. Use that path for [OpenRouter](https://openrouter.ai/docs/cookbook/coding-agents/opencode-integration) and other [OpenCode-supported providers](https://opencode.ai/docs/providers/). Free model availability depends on OpenRouter and provider account limits; HolyClaude does not proxy requests or guarantee zero-cost usage.
 
+### Worker API
+
+HolyClaude exposes a worker-only API for external supervisors. The API is designed for execution, session access, model discovery, validation commands, and cancellation. It is not a review or orchestration layer.
+
+Authentication options:
+- Browser session JWT via `Authorization: Bearer ...`
+- User API key via `x-api-key: ck_...`
+
+Endpoints:
+- `GET /api/worker/health`
+- `GET /api/worker/models/:provider`
+- `POST /api/worker/run`
+- `POST /api/worker/sessions/:sessionId/resume`
+- `GET /api/worker/sessions/:sessionId/messages`
+- `GET /api/worker/sessions/:sessionId/status`
+- `POST /api/worker/sessions/:sessionId/cancel`
+- `POST /api/worker/validate`
+
+Typical `run` payload:
+
+```json
+{
+  "provider": "codex",
+  "projectPath": "/workspace/my-project",
+  "prompt": "Implement the requested change and summarize touched files.",
+  "model": "qwen3.6-27b-mlx"
+}
+```
+
 ### Codex Permission Modes
 
 HolyClaude provides configurable near-parity permission modes for Codex. These settings are intentionally split because CloudCLI Codex chat and the raw `codex` CLI read configuration through different paths.

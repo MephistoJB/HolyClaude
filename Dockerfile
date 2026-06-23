@@ -187,6 +187,7 @@ COPY scripts/patch-cloudcli-codex-complete-exit-code.mjs /tmp/patch-cloudcli-cod
 COPY scripts/patch-cloudcli-codex-lmstudio.mjs /tmp/patch-cloudcli-codex-lmstudio.mjs
 COPY scripts/patch-cloudcli-codex-permissions.mjs /tmp/patch-cloudcli-codex-permissions.mjs
 COPY scripts/patch-cloudcli-disable-self-update.mjs /tmp/patch-cloudcli-disable-self-update.mjs
+COPY scripts/patch-cloudcli-worker-api.mjs /tmp/patch-cloudcli-worker-api.mjs
 COPY --chown=claude:claude scripts/patch-cloudcli-web-terminal-rendering.mjs /tmp/patch-cloudcli-web-terminal-rendering.mjs
 RUN touch /usr/local/lib/node_modules/@cloudcli-ai/cloudcli/.env
 
@@ -214,6 +215,9 @@ RUN node /tmp/patch-cloudcli-codex-lmstudio.mjs && rm -f /tmp/patch-cloudcli-cod
 
 # patch: include explicit Codex success exitCode in CloudCLI completion events (issue #19)
 RUN node /tmp/patch-cloudcli-codex-complete-exit-code.mjs && rm -f /tmp/patch-cloudcli-codex-complete-exit-code.mjs
+
+# patch: expose HolyClaude as worker-only API for external supervisors
+RUN node /tmp/patch-cloudcli-worker-api.mjs && rm -f /tmp/patch-cloudcli-worker-api.mjs
 
 COPY assets/holyclaude-codex-lmstudio-settings.js /usr/local/lib/node_modules/@cloudcli-ai/cloudcli/dist/assets/holyclaude-codex-lmstudio-settings.js
 
