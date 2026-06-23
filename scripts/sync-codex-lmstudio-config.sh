@@ -128,3 +128,7 @@ if [ -n "$managed_block" ]; then
 ${MANAGED_BLOCK_END}"
     insert_managed_block "$managed_block"
 fi
+
+if id -u claude >/dev/null 2>&1; then
+    chown -R claude:users "$CODEX_CONFIG_DIR" 2>/dev/null || true
+fi

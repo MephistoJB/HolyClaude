@@ -172,6 +172,9 @@ fi
 
 # ---------- Fix ownership ----------
 chown -R "$PUID:$PGID" "$CLAUDE_HOME/.claude" 2>/dev/null || true
+chown -R "$PUID:$PGID" "$CLAUDE_HOME/.codex" 2>/dev/null || true
+chown -R "$PUID:$PGID" "$CLAUDE_HOME/.gemini" 2>/dev/null || true
+chown -R "$PUID:$PGID" "$CLAUDE_HOME/.cursor" 2>/dev/null || true
 chown "$PUID:$PGID" "$CLAUDE_HOME/.claude.json" 2>/dev/null || true
 
 # ---------- Create sentinel ----------
