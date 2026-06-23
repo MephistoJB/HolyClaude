@@ -2,6 +2,12 @@ const AUTH_TOKEN_KEY = 'auth-token';
 const BUTTON_ID = 'holyclaude-codex-lmstudio-button';
 const MODAL_ID = 'holyclaude-codex-lmstudio-modal';
 const STYLE_ID = 'holyclaude-codex-lmstudio-style';
+const MODELS_REFRESH_INTERVAL_MS = 15000;
+
+let lastSettingsSnapshot = null;
+let modelsRefreshTimerId = null;
+let modelsRequestCounter = 0;
+let baseUrlReloadTimerId = null;
 
 function getAuthHeaders() {
   const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -13,6 +19,7 @@ function getAuthHeaders() {
 
 async function apiRequest(path, options = {}) {
   const response = await fetch(path, {
+    cache: 'no-store',
     ...options,
     headers: {
       ...getAuthHeaders(),
@@ -328,6 +335,64 @@ function setModelOptions(selectElement, options, preferredValue) {
   selectElement.value = desiredValue;
 }
 
+function getTrackedBaseUrl(settings = lastSettingsSnapshot) {
+  return settings?.effective?.baseUrl || settings?.saved?.baseUrl || '';
+}
+
+function getTrackedModel(settings = lastSettingsSnapshot) {
+  return settings?.effective?.model || settings?.saved?.model || '';
+}
+
+function isModalOpen() {
+  const modal = document.getElementById(MODAL_ID);
+  return modal?.dataset.open === 'true';
+}
+
+function stopModelsAutoRefresh() {
+  if (modelsRefreshTimerId) {
+    window.clearInterval(modelsRefreshTimerId);
+    modelsRefreshTimerId = null;
+  }
+}
+
+function startModelsAutoRefresh() {
+  stopModelsAutoRefresh();
+
+  modelsRefreshTimerId = window.setInterval(() => {
+    if (!isModalOpen()) {
+      stopModelsAutoRefresh();
+      return;
+    }
+
+    const baseUrlInput = document.getElementById(`${MODAL_ID}-base-url`);
+    const baseUrl = baseUrlInput?.value?.trim() || getTrackedBaseUrl();
+    if (!baseUrl) {
+      return;
+    }
+
+    hydrateModal(true, {
+      preserveInput: true,
+      preserveSelection: true,
+      statusMessage: 'Modellliste aus LM Studio aktualisiert.',
+      suppressErrors: true,
+    });
+  }, MODELS_REFRESH_INTERVAL_MS);
+}
+
+function scheduleModelReloadForBaseUrl() {
+  if (baseUrlReloadTimerId) {
+    window.clearTimeout(baseUrlReloadTimerId);
+  }
+
+  baseUrlReloadTimerId = window.setTimeout(() => {
+    baseUrlReloadTimerId = null;
+    hydrateModal(true, {
+      preserveInput: true,
+      statusMessage: 'Modellliste fuer die neue LM-Studio-URL aktualisiert.',
+    });
+  }, 500);
+}
+
 async function loadSettings() {
   const response = await apiRequest('/api/settings/codex-lmstudio');
   return response.data || response;
@@ -373,41 +438,73 @@ function renderEnvCard(settings) {
   card.innerHTML = `<strong>Env-Override aktiv</strong>${envDetails.join('<br />')}<br />GUI-Werte werden gespeichert, aber Env-Werte haben bis zum Container-Neustart Vorrang.`;
 }
 
-async function hydrateModal(forceReloadModels = false) {
+async function hydrateModal(forceReloadModels = false, options = {}) {
+  const {
+    preserveInput = false,
+    preserveSelection = false,
+    statusMessage = 'LM-Studio-Modelle erfolgreich geladen.',
+    suppressErrors = false,
+  } = options;
+  const requestId = ++modelsRequestCounter;
   setBusy(true);
-  setStatus('', '');
+  if (!suppressErrors) {
+    setStatus('', '');
+  }
 
   try {
     const settings = await loadSettings();
+    lastSettingsSnapshot = settings;
     const baseUrlInput = document.getElementById(`${MODAL_ID}-base-url`);
     const modelSelect = document.getElementById(`${MODAL_ID}-model`);
+    const currentBaseUrl = baseUrlInput?.value?.trim() || '';
+    const currentSelectedModel = modelSelect?.value || '';
 
     if (baseUrlInput) {
-      baseUrlInput.value = settings?.effective?.baseUrl || settings?.saved?.baseUrl || '';
+      baseUrlInput.value = preserveInput && currentBaseUrl
+        ? currentBaseUrl
+        : getTrackedBaseUrl(settings);
     }
 
     renderEnvCard(settings);
 
-    const shouldLoadModels = forceReloadModels || Boolean(settings?.effective?.baseUrl || settings?.saved?.baseUrl);
+    const candidateBaseUrl = baseUrlInput?.value?.trim() || getTrackedBaseUrl(settings);
+    const shouldLoadModels = forceReloadModels || Boolean(candidateBaseUrl);
     if (shouldLoadModels) {
-      const modelData = await loadModels(baseUrlInput?.value || settings?.effective?.baseUrl || settings?.saved?.baseUrl || '');
-      setModelOptions(modelSelect, modelData.options, settings?.effective?.model || settings?.saved?.model || modelData.defaultModel);
-      setStatus('success', 'LM-Studio-Modelle erfolgreich geladen.');
+      const modelData = await loadModels(candidateBaseUrl);
+      if (requestId !== modelsRequestCounter) {
+        return;
+      }
+
+      const preferredModel = preserveSelection && currentSelectedModel
+        ? currentSelectedModel
+        : getTrackedModel(settings) || modelData.defaultModel;
+      setModelOptions(modelSelect, modelData.options, preferredModel);
+
+      if (preserveSelection && currentSelectedModel && modelSelect?.value !== currentSelectedModel) {
+        setStatus('error', `Das bisher ausgewaehlte Modell "${currentSelectedModel}" ist in LM Studio nicht mehr verfuegbar.`);
+      } else {
+        setStatus('success', statusMessage);
+      }
     } else {
       setModelOptions(modelSelect, [], '');
       setStatus('', 'Trage zuerst eine LM-Studio-URL ein und lade dann die Modelle.');
     }
   } catch (error) {
-    setStatus('error', error instanceof Error ? error.message : 'Einstellungen konnten nicht geladen werden.');
+    if (!suppressErrors) {
+      setStatus('error', error instanceof Error ? error.message : 'Einstellungen konnten nicht geladen werden.');
+    }
   } finally {
-    setBusy(false);
+    if (requestId === modelsRequestCounter) {
+      setBusy(false);
+    }
   }
 }
 
 function openModal() {
   const modal = createModal();
   modal.dataset.open = 'true';
-  hydrateModal(false);
+  hydrateModal(true, { statusMessage: 'LM-Studio-Modelle erfolgreich geladen.' });
+  startModelsAutoRefresh();
 }
 
 function closeModal() {
@@ -415,6 +512,11 @@ function closeModal() {
   if (modal) {
     modal.dataset.open = 'false';
   }
+  if (baseUrlReloadTimerId) {
+    window.clearTimeout(baseUrlReloadTimerId);
+    baseUrlReloadTimerId = null;
+  }
+  stopModelsAutoRefresh();
 }
 
 function attachEvents() {
@@ -431,6 +533,8 @@ function attachEvents() {
 
   document.getElementById(`${MODAL_ID}-close`)?.addEventListener('click', closeModal);
   document.getElementById(`${MODAL_ID}-load-models`)?.addEventListener('click', () => hydrateModal(true));
+  document.getElementById(`${MODAL_ID}-base-url`)?.addEventListener('change', scheduleModelReloadForBaseUrl);
+  document.getElementById(`${MODAL_ID}-base-url`)?.addEventListener('blur', scheduleModelReloadForBaseUrl);
   document.getElementById(`${MODAL_ID}-save`)?.addEventListener('click', async () => {
     const baseUrlInput = document.getElementById(`${MODAL_ID}-base-url`);
     const modelSelect = document.getElementById(`${MODAL_ID}-model`);
@@ -441,6 +545,19 @@ function attachEvents() {
     setStatus('', '');
     try {
       await saveSettings({ baseUrl, model });
+      lastSettingsSnapshot = {
+        ...(lastSettingsSnapshot || {}),
+        saved: {
+          ...((lastSettingsSnapshot && lastSettingsSnapshot.saved) || {}),
+          baseUrl,
+          model,
+        },
+        effective: {
+          ...((lastSettingsSnapshot && lastSettingsSnapshot.effective) || {}),
+          baseUrl,
+          model,
+        },
+      };
       setStatus('success', 'Codex ist jetzt auf LM Studio konfiguriert. Neue Codex-Sessions verwenden diese Einstellungen.');
     } catch (error) {
       setStatus('error', error instanceof Error ? error.message : 'Speichern fehlgeschlagen.');

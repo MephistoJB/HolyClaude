@@ -17,7 +17,6 @@ const HOLYCLAUDE_CODEX_LMSTUDIO_PATCH = true;
 const CODEX_CONFIG_PATH = path.join(os.homedir(), '.codex', 'config.toml');
 const HOLYCLAUDE_CODEX_BASE_URL_ENV_NAMES = ['HOLYCLAUDE_CODEX_BASE_URL', 'CODEX_OSS_BASE_URL'];
 const HOLYCLAUDE_CODEX_MODEL_ENV_NAMES = ['HOLYCLAUDE_CODEX_MODEL', 'CODEX_MODEL'];
-const HOLYCLAUDE_CODEX_MODEL_PROVIDER = 'lmstudio';
 const HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID = 'holyclaude_lmstudio';
 
 function readFirstConfiguredEnvValue(envNames) {
@@ -109,7 +108,13 @@ function mapLmStudioModelOption(model) {
 
 async function fetchLmStudioModels(baseUrl) {
   const normalizedBaseUrl = normalizeCodexBaseUrl(baseUrl);
-  const response = await fetch(\`\${normalizedBaseUrl}/models\`);
+  const response = await fetch(\`\${normalizedBaseUrl}/models\`, {
+    cache: 'no-store',
+    headers: {
+      'cache-control': 'no-cache',
+      pragma: 'no-cache',
+    },
+  });
   if (!response.ok) {
     const responseText = await response.text().catch(() => '');
     const error = new Error(\`LM Studio returned HTTP \${response.status}\${responseText ? \`: \${responseText.slice(0, 200)}\` : ''}\`);
@@ -186,7 +191,7 @@ async function buildCodexLmStudioSettingsResponse() {
         : null,
     },
     effective: {
-      modelProvider: HOLYCLAUDE_CODEX_MODEL_PROVIDER,
+      modelProvider: HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID,
       baseUrl: effectiveBaseUrl,
       model: effectiveModel,
     },
@@ -399,7 +404,13 @@ const resolveCodexModelProvider = async () => {
 };
 
 const fetchLmStudioModelsDefinition = async (baseUrl) => {
-  const response = await fetch(\`\${baseUrl}/models\`);
+  const response = await fetch(\`\${baseUrl}/models\`, {
+    cache: 'no-store',
+    headers: {
+      'cache-control': 'no-cache',
+      pragma: 'no-cache',
+    },
+  });
   if (!response.ok) {
     throw new Error(\`LM Studio returned HTTP \${response.status}\`);
   }
@@ -470,7 +481,7 @@ function patchCodexModelsProvider(source) {
     /async getSupportedModels\(\)[\s\S]*?async getCurrentActiveModel\(\)/,
     `async getSupportedModels() {
     const providerConfig = await resolveCodexModelProvider();
-    if (providerConfig.modelProvider === 'lmstudio' && providerConfig.baseUrl) {
+    if (providerConfig.modelProvider === HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID && providerConfig.baseUrl) {
       try {
         return await fetchLmStudioModelsDefinition(providerConfig.baseUrl);
       }
@@ -512,7 +523,7 @@ function patchCodexModelsProvider(source) {
     async changeActiveModel(input)`,
   );
 
-  if (!source.includes(PATCH_MARKER) || !source.includes("providerConfig.modelProvider === 'lmstudio'")) {
+  if (!source.includes(PATCH_MARKER) || !source.includes("providerConfig.modelProvider === HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID")) {
     throw new Error(ERROR_MESSAGE);
   }
 

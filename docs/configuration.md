@@ -109,7 +109,7 @@ OpenCode is configured from the full image with the `opencode` TUI. Use that pat
 
 HolyClaude provides configurable near-parity permission modes for Codex. These settings are intentionally split because CloudCLI Codex chat and the raw `codex` CLI read configuration through different paths.
 
-For LM Studio, HolyClaude can also seed and update Codex's own config with `model_provider="lmstudio"`, `openai_base_url`, and `model`. You can do that either through env vars (`HOLYCLAUDE_CODEX_BASE_URL`, `HOLYCLAUDE_CODEX_MODEL`) or through the CloudCLI GUI helper labeled `Codex LM Studio`.
+For LM Studio, HolyClaude can also seed and update Codex's own config with `model_provider="holyclaude_lmstudio"`, a matching entry under `model_providers`, and `model`. You can do that either through env vars (`HOLYCLAUDE_CODEX_BASE_URL`, `HOLYCLAUDE_CODEX_MODEL`) or through the CloudCLI GUI helper labeled `Codex LM Studio`. The GUI now reloads the LM Studio model list when the dialog opens, after base-URL changes, and periodically while the dialog stays open.
 
 | Variable | Default | Valid values | Applies to | Behavior |
 |----------|---------|--------------|------------|----------|

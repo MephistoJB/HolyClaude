@@ -900,7 +900,7 @@ This is how I personally run it. Edit `./data/claude/settings.json` on your host
 
 HolyClaude also ships configurable near-parity permission modes for Codex, with separate controls for CloudCLI Codex chat and the raw `codex` CLI.
 
-If you want to run Codex against LM Studio, HolyClaude now supports both environment variables and an in-app GUI helper. Set `HOLYCLAUDE_CODEX_BASE_URL` plus `HOLYCLAUDE_CODEX_MODEL` before container start, or use the floating `Codex LM Studio` button in CloudCLI to store `model_provider="lmstudio"`, `openai_base_url`, and `model` in `~/.codex/config.toml`.
+If you want to run Codex against LM Studio, HolyClaude now supports both environment variables and an in-app GUI helper. Set `HOLYCLAUDE_CODEX_BASE_URL` plus `HOLYCLAUDE_CODEX_MODEL` before container start, or use the floating `Codex LM Studio` button in CloudCLI to store `model_provider="holyclaude_lmstudio"`, the matching `model_providers` entry, and `model` in `~/.codex/config.toml`. The GUI refreshes the LM Studio model list automatically when opened, after URL changes, and while the settings dialog remains open.
 
 For Unraid, the container-side env block is typically:
 
