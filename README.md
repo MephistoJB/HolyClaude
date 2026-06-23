@@ -820,7 +820,7 @@ holyclaude/
 | Settings, credentials, API keys | `/home/claude/.claude` | `./data/claude` | **Yes** |
 | Claude Code session (OAuth, onboarding) | `/home/claude/.claude.json` | `./data/claude/.claude.json.persist` | **Yes** |
 | Your code and projects | `/workspace` | `./workspace` | **Yes** |
-| CloudCLI account | `/home/claude/.cloudcli` | *(container only by default — see below)* | No (opt-in available) |
+| CloudCLI account | `/home/claude/.cloudcli` | `./data/claude/.cloudcli` | Yes |
 
 HolyClaude restores the saved Claude Code session before startup can create a fresh default file. That keeps container rebuilds and recreates from replacing a real OAuth/API session with onboarding state.
 
@@ -845,7 +845,7 @@ docker compose restart holyclaude
 
 ### Persisting the CloudCLI account (optional, local storage only)
 
-By default, the CloudCLI account database (`~/.cloudcli`) is container-local and gets wiped on rebuild. Re-creating the account takes 10 seconds, so most people leave it as-is.
+HolyClaude now links the CloudCLI account database (`~/.cloudcli`) into the persisted HolyClaude data directory by default, so web logins survive container rebuilds and Unraid template updates.
 
 If you want it to survive rebuilds, add a **named Docker volume** to your compose file:
 

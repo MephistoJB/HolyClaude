@@ -171,6 +171,14 @@ Never delete the entire `./data/claude/` directory — this wipes your credentia
 
 ---
 
+### HolyClaude web login asks to re-login after rebuild
+
+**Symptom:** The HolyClaude / CloudCLI web UI suddenly asks you to create the account again after a container rebuild or template update.
+
+**Cause:** Older images kept the CloudCLI auth database in container-local `~/.cloudcli/auth.db`. Rebuilding the container generated a new database and JWT secret, so previously issued browser tokens started failing with `invalid signature`.
+
+**Fix:** Current images migrate `~/.cloudcli` into the persisted HolyClaude data directory automatically. After updating, recreate the web login once, then future rebuilds keep it. If an older container has already been rebuilt, the previous in-container auth database is gone and that one-time web login must be created again.
+
 ### Claude Code asks to re-login after rebuild
 
 **Symptom:** After `docker compose down && up`, Claude Code prompts for OAuth / API key again.

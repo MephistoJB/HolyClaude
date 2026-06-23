@@ -100,6 +100,25 @@ if [ ! -e "$CLAUDE_HOME/.cursor" ]; then
     chown -h "$PUID:$PGID" "$CLAUDE_HOME/.cursor"
 fi
 
+# ---------- CloudCLI account state symlink (every boot) ----------
+mkdir -p "$CLAUDE_HOME/.claude/.cloudcli"
+chown "$PUID:$PGID" "$CLAUDE_HOME/.claude/.cloudcli"
+
+if [ -d "$CLAUDE_HOME/.cloudcli" ] && [ ! -L "$CLAUDE_HOME/.cloudcli" ]; then
+    if [ -z "$(ls -A "$CLAUDE_HOME/.claude/.cloudcli" 2>/dev/null)" ] && [ -n "$(ls -A "$CLAUDE_HOME/.cloudcli" 2>/dev/null)" ]; then
+        cp -a "$CLAUDE_HOME/.cloudcli/." "$CLAUDE_HOME/.claude/.cloudcli/"
+        chown -R "$PUID:$PGID" "$CLAUDE_HOME/.claude/.cloudcli" 2>/dev/null || true
+        echo "[entrypoint] Migrated CloudCLI account state into persistent storage"
+    fi
+    rm -rf "$CLAUDE_HOME/.cloudcli"
+fi
+
+[ -L "$CLAUDE_HOME/.cloudcli" ] && [ ! -e "$CLAUDE_HOME/.cloudcli" ] && rm -f "$CLAUDE_HOME/.cloudcli"
+if [ ! -e "$CLAUDE_HOME/.cloudcli" ]; then
+    ln -s "$CLAUDE_HOME/.claude/.cloudcli" "$CLAUDE_HOME/.cloudcli"
+    chown -h "$PUID:$PGID" "$CLAUDE_HOME/.cloudcli"
+fi
+
 # ---------- Persist ~/.claude.json (every boot) ----------
 # Claude Code rewrites ~/.claude.json directly, so keep the durable copy inside
 # the bind-mounted ~/.claude directory and restore it before bootstrap starts.
