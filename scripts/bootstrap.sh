@@ -12,6 +12,7 @@ CLAUDE_USER="claude"
 PUID="${PUID:-1000}"
 PGID="${PGID:-1000}"
 SOURCE_DIR="/usr/local/share/holyclaude"
+HOLYCLAUDE_CODEX_PROVIDER_ID="holyclaude_lmstudio"
 
 echo "[bootstrap] Running first-boot initialization..."
 
@@ -76,9 +77,12 @@ TOML
             *) CODEX_BASE_URL_NORMALIZED="${CODEX_BASE_URL_NORMALIZED}/v1" ;;
         esac
         cat >> "$CLAUDE_HOME/.codex/config.toml" <<TOML
-model_provider = "lmstudio"
-oss_provider = "lmstudio"
-openai_base_url = "$CODEX_BASE_URL_NORMALIZED"
+model_provider = "$HOLYCLAUDE_CODEX_PROVIDER_ID"
+
+[model_providers.$HOLYCLAUDE_CODEX_PROVIDER_ID]
+name = "LM Studio (HolyClaude)"
+base_url = "$CODEX_BASE_URL_NORMALIZED"
+wire_api = "responses"
 TOML
     fi
 
@@ -92,12 +96,12 @@ TOML
     cat >> "$CLAUDE_HOME/.codex/config.toml" <<'TOML'
 
 [features]
-codex_hooks = true
+hooks = true
 TOML
 
     echo "[bootstrap] Created Codex CLI config ($CODEX_CLI_CONFIG_LABEL, hooks enabled)"
 elif ! grep -q '^\[features\]' "$CLAUDE_HOME/.codex/config.toml"; then
-    printf '\n[features]\ncodex_hooks = true\n' >> "$CLAUDE_HOME/.codex/config.toml"
+    printf '\n[features]\nhooks = true\n' >> "$CLAUDE_HOME/.codex/config.toml"
     echo "[bootstrap] Added [features] section to existing Codex config"
 fi
 

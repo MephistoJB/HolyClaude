@@ -4,6 +4,7 @@ set -e
 CLAUDE_HOME="${CLAUDE_HOME:-/home/claude}"
 CODEX_CONFIG_DIR="$CLAUDE_HOME/.codex"
 CODEX_CONFIG_FILE="$CODEX_CONFIG_DIR/config.toml"
+HOLYCLAUDE_CODEX_PROVIDER_ID="holyclaude_lmstudio"
 MANAGED_BLOCK_START="# >>> HolyClaude Codex LM Studio >>>"
 MANAGED_BLOCK_END="# <<< HolyClaude Codex LM Studio <<<"
 
@@ -61,6 +62,7 @@ upsert_toml_string() {
 remove_existing_lmstudio_settings() {
     perl -0pi -e 's/^\Q'"$MANAGED_BLOCK_START"'\E\n.*?^\Q'"$MANAGED_BLOCK_END"'\E\n?//ms' "$CODEX_CONFIG_FILE"
     perl -0pi -e 's/^[[:space:]]*(model_provider|oss_provider|openai_base_url|model)[[:space:]]*=.*\n//mg' "$CODEX_CONFIG_FILE"
+    perl -0pi -e 's/^\[model_providers\.holyclaude_lmstudio\]\n(?:[^\n]*\n)*?(?=^\[|\z)//msg' "$CODEX_CONFIG_FILE"
 }
 
 insert_managed_block() {
@@ -97,9 +99,12 @@ if [ -n "$configured_base_url" ]; then
     normalized_base_url="$(normalize_base_url "$configured_base_url" || true)"
     if [ -n "$normalized_base_url" ]; then
         managed_block="${MANAGED_BLOCK_START}
-model_provider = \"lmstudio\"
-oss_provider = \"lmstudio\"
-openai_base_url = \"${normalized_base_url}\""
+model_provider = \"${HOLYCLAUDE_CODEX_PROVIDER_ID}\"
+
+[model_providers.${HOLYCLAUDE_CODEX_PROVIDER_ID}]
+name = \"LM Studio (HolyClaude)\"
+base_url = \"${normalized_base_url}\"
+wire_api = \"responses\""
         echo "[entrypoint] Synced Codex LM Studio base URL from env"
     else
         echo "[entrypoint] WARNING: could not normalize HOLYCLAUDE_CODEX_BASE_URL/CODEX_OSS_BASE_URL"
@@ -109,8 +114,7 @@ fi
 if [ -n "$configured_model" ]; then
     if [ -z "$managed_block" ]; then
         managed_block="${MANAGED_BLOCK_START}
-model_provider = \"lmstudio\"
-oss_provider = \"lmstudio\""
+model_provider = \"${HOLYCLAUDE_CODEX_PROVIDER_ID}\""
     fi
     managed_block="${managed_block}
 model = \"${configured_model}\""

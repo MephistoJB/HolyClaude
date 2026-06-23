@@ -18,6 +18,7 @@ const CODEX_CONFIG_PATH = path.join(os.homedir(), '.codex', 'config.toml');
 const HOLYCLAUDE_CODEX_BASE_URL_ENV_NAMES = ['HOLYCLAUDE_CODEX_BASE_URL', 'CODEX_OSS_BASE_URL'];
 const HOLYCLAUDE_CODEX_MODEL_ENV_NAMES = ['HOLYCLAUDE_CODEX_MODEL', 'CODEX_MODEL'];
 const HOLYCLAUDE_CODEX_MODEL_PROVIDER = 'lmstudio';
+const HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID = 'holyclaude_lmstudio';
 
 function readFirstConfiguredEnvValue(envNames) {
   for (const envName of envNames) {
@@ -144,9 +145,14 @@ async function fetchLmStudioModels(baseUrl) {
 
 async function buildCodexLmStudioSettingsResponse() {
   const config = await readCodexConfig();
-  const savedBaseUrl = typeof config?.openai_base_url === 'string' && config.openai_base_url.trim() !== ''
-    ? config.openai_base_url.trim()
+  const savedProviderConfig = config?.model_providers && typeof config.model_providers === 'object'
+    ? config.model_providers[HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID]
     : null;
+  const savedBaseUrl = typeof savedProviderConfig?.base_url === 'string' && savedProviderConfig.base_url.trim() !== ''
+    ? savedProviderConfig.base_url.trim()
+    : typeof config?.openai_base_url === 'string' && config.openai_base_url.trim() !== ''
+      ? config.openai_base_url.trim()
+      : null;
   const savedModel = typeof config?.model === 'string' && config.model.trim() !== ''
     ? config.model.trim()
     : null;
@@ -241,11 +247,20 @@ router.put('/codex-lmstudio', async (req, res) => {
     const config = await readCodexConfig();
     const nextConfig = {
       ...config,
-      model_provider: HOLYCLAUDE_CODEX_MODEL_PROVIDER,
-      oss_provider: HOLYCLAUDE_CODEX_MODEL_PROVIDER,
-      openai_base_url: baseUrl,
+      model_provider: HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID,
       model,
+      model_providers: {
+        ...(config?.model_providers && typeof config.model_providers === 'object' ? config.model_providers : {}),
+        [HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID]: {
+          name: 'LM Studio (HolyClaude)',
+          base_url: baseUrl,
+          wire_api: 'responses',
+        },
+      },
     };
+
+    delete nextConfig.oss_provider;
+    delete nextConfig.openai_base_url;
 
     await writeCodexConfig(nextConfig);
     const settings = await buildCodexLmStudioSettingsResponse();
@@ -261,6 +276,7 @@ const codexModelsHelpers = `
 const HOLYCLAUDE_CODEX_LMSTUDIO_PATCH = true;
 const HOLYCLAUDE_CODEX_BASE_URL_ENV_NAMES = ['HOLYCLAUDE_CODEX_BASE_URL', 'CODEX_OSS_BASE_URL'];
 const HOLYCLAUDE_CODEX_MODEL_ENV_NAMES = ['HOLYCLAUDE_CODEX_MODEL', 'CODEX_MODEL'];
+const HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID = 'holyclaude_lmstudio';
 
 const readConfiguredCodexEnvValue = (envNames) => {
   for (const envName of envNames) {
@@ -363,12 +379,15 @@ const resolveCodexModelProvider = async () => {
   const envBaseUrl = normalizeCodexBaseUrl(readConfiguredCodexEnvValue(HOLYCLAUDE_CODEX_BASE_URL_ENV_NAMES));
   const envModel = readConfiguredCodexEnvValue(HOLYCLAUDE_CODEX_MODEL_ENV_NAMES);
   const savedModelProvider = readOptionalString(config?.model_provider);
-  const savedBaseUrl = normalizeCodexBaseUrl(readOptionalString(config?.openai_base_url));
+  const savedBaseUrl = normalizeCodexBaseUrl(
+    readOptionalString(config?.model_providers?.[HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID]?.base_url)
+      || readOptionalString(config?.openai_base_url),
+  );
   const savedModel = readOptionalString(config?.model);
   const effectiveBaseUrl = envBaseUrl ?? savedBaseUrl;
   const effectiveModel = envModel ?? savedModel;
   const effectiveModelProvider = envBaseUrl || envModel
-    ? 'lmstudio'
+    ? HOLYCLAUDE_CODEX_REMOTE_PROVIDER_ID
     : savedModelProvider;
 
   return {
